@@ -14,7 +14,7 @@ shown_opportunities_history = set()
 async def search_opportunities(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text.strip()
     
-    if any(word in user_text for word in ["فرص", "سفر", "خبرات", "دولار", "وظائف", "استشارات", "محاسبة", "منصات"]):
+    if any(word in user_text for word in ["فرص", "سفر", "خبرات", "طلب زواج", "خبرات", "دولار", "وظائف", "استشارات", "محاسبة", "منصات"]):
         await update.message.reply_text("🔍 جاري فحص قاعدة البيانات وتصفية الفرص لتجنب أي تكرار.. وجلب أحدث فرص الخبراء الحصرية (بدون قيود سن).. ثواني وراجع لك!")
         
         # لستة موسعة من فرص الخبراء والمستشارين الماليين لمنع أي تكرار
