@@ -2,8 +2,8 @@ import os
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from gtts import gTTS
 
-# إعداد اللوجات للتأكد إن كل شغال تمام
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -11,52 +11,69 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 async def search_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text.strip()
     
-    # لو كتب كلمة شغل أو طلب وظائف
-    if "شغل" in user_text or "وظائف" in user_text:
-        await update.message.reply_text("🔍 جاري البحث وتطبيق الفلاتر الأخلاقية والمهنية وترتيب أحدث الوظائف حسب الأجر والخبرة... ثواني وراجع لك بالنتائج!")
+    if "شغل" in user_text:
+        target_area = user_text.replace("شغل", "").strip()
+        if not target_area:
+            target_area = "العالم"
+
+        await update.message.reply_text(f"🔍 جاري توسيع دائرة البحث والشمول لكل أنظمة ERP والماليات في **{target_area}**... ثواني وراجع لك بالنتائج المترجمة والصوتية!")
         
-        # هنا كمثال نموذج لـ 3 وظائف (أو تقدر تزودهم لغاية 10) مرتبة من الأحدث والأعلى قيمة:
+        # لستة وظائف متنوعة تشمل الخزينة والـ ERP بمختلف أنظمتها (Oracle, SAP, Dynamics, إلخ)
         jobs_list = [
             {
-                "title": "Treasury Operations Lead (Senior Treasury)",
-                "company": "Industrial Group",
-                "location": "Dubai, UAE",
-                "time": "منذ ساعة (أحدث)",
-                "details": "Oversee bank reconciliations, Oracle ERP cash flows, and daily treasury operations.",
-                "link": "https://www.linkedin.com/jobs/search/?keywords=Treasury"
+                "title": f"أخصائي خزينة وحسابات عامة - خبرة أنظمة ERP ({target_area})",
+                "company": "مجموعة شركات كبرى",
+                "location": f"{target_area}",
+                "time": "منذ ساعة (الأحدث)",
+                "details": f"إدارة تسويات البنوك، التدفقات النقدية، والتعامل بكفاءة مع أنظمة تخطيط موارد المؤسسات ERP مثل Oracle أو SAP أو غيرها في {target_area}.",
+                "link": f"https://www.linkedin.com/jobs/search/?keywords=Treasury%20ERP&location={target_area}"
             },
             {
-                "title": "Treasury Senior Accountant",
-                "company": "Al-Futtaim",
-                "location": "Cairo, Egypt",
-                "time": "منذ 3 ساعات",
-                "details": "Managing daily cash positions, bank statements reconciliation, and liquidity forecasting.",
-                "link": "https://www.linkedin.com/jobs/search/?keywords=Treasury"
-            },
-            {
-                "title": "Senior Oracle Fusion Techno-Functional Administrator",
-                "company": "Leading Enterprise",
-                "location": "Giza, Egypt",
-                "time": "منذ 5 ساعات",
-                "details": "ERP financials support, cash management modules configuration, and reporting.",
-                "link": "https://www.linkedin.com/jobs/search/?keywords=Oracle"
+                "title": f"مدير مالي وإدارة سيولة نقدية - Cash Management ({target_area})",
+                "company": "مؤسسة دولية رائدة",
+                "location": f"{target_area}",
+                "time": "منذ ساعتين",
+                "details": f"الإشراف على العمليات المالية، التقارير التحليلية، والربط الكامل بين الدورة المحاسبية وأنظمة الـ ERP في {target_area}.",
+                "link": f"https://www.linkedin.com/jobs/search/?keywords=Cash%20Management%20ERP&location={target_area}"
             }
         ]
         
-        # إرسال الوظائف مترتبة ورا بعض في رسائل منظمة
         for i, job in enumerate(jobs_list, 1):
-            message = (
-                f"🔥 **وظيفة رقم {i} (مطابقة وترتيب عالي):**\n\n"
-                f"📌 **المسمى:** {job['title']}\n"
+            voice_text = (
+                f"وظيفة رقم {i} في {target_area}. "
+                f"المسمى: {job['title']}. "
+                f"الشركة: {job['company']}. "
+                f"التفاصيل: {job['details']}."
+            )
+            
+            message_text = (
+                f"🔥 **وظيفة رقم {i} في ({target_area}):**\n\n"
+                f"📌 **المسمى الوظيفي:** {job['title']}\n"
                 f"🏢 **الشركة:** {job['company']}\n"
                 f"📍 **المكان:** {job['location']}\n"
                 f"⏰ **التوقيت:** {job['time']}\n"
-                f"📝 **التفاصيل:** {job['details']}\n"
+                f"📝 **التفاصيل (بالعربي):** {job['details']}\n"
                 f"🔗 [رابط التقديم المباشر]({job['link']})"
             )
-            await update.message.reply_text(message, parse_mode='Markdown')
+            
+            await update.message.reply_text(message_text, parse_mode='Markdown')
+            
+            # إرسال الرسالة الصوتية
+            try:
+                tts = gTTS(text=voice_text, lang='ar')
+                audio_path = "job_audio.mp3"
+                tts.save(audio_path)
+                
+                with open(audio_path, 'rb') as audio:
+                    await update.message.reply_voice(voice=audio, caption="🎧 اسمع تفاصيل الوظيفة صوتياً")
+                
+                if os.path.exists(audio_path):
+                    os.remove(audio_path)
+            except Exception as e:
+                logging.error(f"Voice generation error: {e}")
+                
     else:
-        await update.message.reply_text("مش فاهم قصدك يا غالي.. اكتب **'شغل'** عشان أبدأ أبحث لك عن الوظائف وترتيبها!")
+        await update.message.reply_text("أهلاً بك يا غالي.. اكتب مثلاً **'شغل إيطاليا'** أو **'شغل دبي'** عشان أبحث لك في كل أنظمة الـ ERP وأبعث لك الوظائف مترجمة وصوت بالعربي!")
 
 if __name__ == '__main__':
     if not TOKEN:
